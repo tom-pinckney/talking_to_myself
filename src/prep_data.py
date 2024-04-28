@@ -14,6 +14,21 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Load the cl100k_base tokenizer which is designed to work with the ada-002 model
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
+
+def get_embedding(text, client):
+    """
+    Embed string, can be used in apply pandas call
+    """
+
+    response = client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+
+    # Returns embedding vector
+    return response.data[0].embedding
+
+
 def extract_recent_message(body):
     # Split the body into lines
     lines = body.splitlines()
@@ -97,23 +112,9 @@ def preprocess_data(df, max_tokens):
   return df
 
 
-def get_embedding(text):
-    """
-    Embed string, can be used in apply pandas call
-    """
-
-    response = client.embeddings.create(
-        input=df_emails.text.values[0],
-        model="text-embedding-3-small"
-    )
-
-    # Returns embedding vector
-    return response.data[0].embedding
-
-
 # Specify the path to your mbox file
 df_emails = extract_email_data_to_dataframe('../Data/GptDump.mbox')
 df_emails = preprocess_data(df_emails, 100)
 df_emails = df_emails.loc[df_emails['from'].str.contains(TARGET_EMAIL)].reset_index(drop=True)
-df_emails['embeddings'] = df_emails['text'].apply(get_embedding)
+df_emails['embeddings'] = df_emails['text'].apply(lambda x: get_embedding(x, client))
 df_emails.to_csv('../data/embedded_emails.csv', index=False)
