@@ -7,8 +7,8 @@ import tiktoken
 import numpy as np
 import streamlit as st
 
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-TARGET_EMAIL = st.secrets["TARGET_EMAIL"]
+OPENAI_API_KEY = os.environ["OPEN_AI_API_KEY"]
+TARGET_EMAIL = "" 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Load the cl100k_base tokenizer which is designed to work with the ada-002 model

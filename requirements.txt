@@ -5,3 +5,4 @@ scipy==1.10.1
 mailbox
 tiktoken
 numpy
+jupyter

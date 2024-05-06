@@ -48,7 +48,7 @@ df = load_data('data/embedded_emails.csv')
 
 st.title("Talking to Myself")
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = OpenAI(api_key=os.environ["OPEN_AI_API_KEY"])
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-4-turbo"
