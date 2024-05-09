@@ -1,3 +1,4 @@
+import re
 import mailbox
 import pandas as pd
 import hashlib
@@ -14,6 +15,35 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Load the cl100k_base tokenizer which is designed to work with the ada-002 model
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
+TO_KEY = {
+    'bend4him@hotmail.com': "Ben Duncan - Best Friend",
+    'beth@expository.org': "Beth Pinckney - Mother",
+    'sportcrazy572@aol.com': "Gretchen Allie - Friend",
+    'graywolf512@gmail.com': "Gray Kasko - Cousin",
+    'goldgirl511@hotmail.com': "Sarag Russet - Friend",
+    'sarahpashe1391@gmail.com': "Sarah Paskiewicz - Friend",
+    'elitesweetie@gmail.com': "Amber Elliott - Cousin",
+    'papaya_313@hotmail.com': "Laura Russet - Friend",
+    'kcahoon14@yahoo.com': "Kyle Cahoonn - Friend",
+    'kayharper09@gmail.com': "Kay Harper - Girlfriend",
+    'barlowgrl16@yahoo.com': "Jen - Friend"
+}
+
+def extract_email(val):
+    """
+    Simple regex to pull emails out of to string, NOTE: this is not a full email regex, just manually hacked
+    together on a flight without internet
+    """
+
+    match = re.findall("[a-z_0-9]+@[a-z]+.[a-z]+", val.lower())
+    if match:
+        return match[0]
+    else:
+        return None
+
+def format_context_chunk(x):
+
+    return f"Date Sent {x['time']}\nTo {x['to_person']}who is Thomas{x['to_relationship']}\n{x['text']}"
 
 def get_embedding(text, client):
     """
@@ -117,4 +147,11 @@ df_emails = extract_email_data_to_dataframe('../Data/GptDump.mbox')
 df_emails = preprocess_data(df_emails, 100)
 df_emails = df_emails.loc[df_emails['from'].str.contains(TARGET_EMAIL)].reset_index(drop=True)
 df_emails['embeddings'] = df_emails['text'].apply(lambda x: get_embedding(x, client))
+df_emails.loc[df_emails.text.isnull(), "text"] = ""
+df_emails['time'] = pd.to_datetime(df_emails.time.str[0:-6])
+df_emails['to_email'] = df_emails.to.apply(extract_email)
+df_emails['to_person'] = df_emails.to_email.replace(TO_KEY)
+df_emails['to_relationship'] = df_emails.to_person.str.split("-").str[1]
+df_emails['to_person'] = df_emails.to_person.str.split("-").str[0]
+df_emails['context_chunk'] = df_emails.apply(format_context_chunk, axis=1)
 df_emails.to_csv('../data/embedded_emails.csv', index=False)

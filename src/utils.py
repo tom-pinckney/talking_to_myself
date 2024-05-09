@@ -1,6 +1,40 @@
 from typing import List
 from scipy import spatial
 
+def chat_message(question, context, messages, client, model="gpt-4-turbo", stream=False):
+    """
+    Wrapper function to send a new message and append response to the chat session
+    """
+
+    messages.append({"role": "user", "content": f"Context: {context} \n\n---\n\nQuestion: {question}\nAnswer:"})
+    
+    response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.5,
+            max_tokens=450,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stream=stream,
+        ).choices[0].message.content
+
+    messages.append({"role": "assistant", "content": response})
+
+    return messages
+
+def print_response(messages, role='assistant'):
+    """
+    Takes chat message session and prints the last message for the given role
+    """
+    for i in range(1,len(messages)):
+        i = i*-1
+        message = messages[i]
+        if message['role']==role:
+            print(message['content'])
+            return None
+    print("No message with provided role")
+
 
 def distances_from_embeddings(
     query_embedding: List[float],
@@ -61,7 +95,7 @@ def create_context(
             break
 
         # Else add it to the text that is being returned
-        returns.append(row["text"])
+        returns.append(row["context_chunk"])
 
     # Return the context
     return "\n\n###\n\n".join(returns)
